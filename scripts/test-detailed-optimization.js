@@ -5,8 +5,8 @@
  * 测试新增的细节优化功能
  */
 
-const fs = require('fs');
-const path = require('path');
+import fs from 'fs';
+import path from 'path';
 
 console.log('🔍 数学学习平台细节优化测试');
 console.log('==================================================');

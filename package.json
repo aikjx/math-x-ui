@@ -8,7 +8,11 @@
     "dev:client": "vite --host --port 3000",
     "dev": "pnpm dev:client",
     "build:client": "vite build --outDir dist/static",
-    "build": "mkdir dist 2>nul || rmdir /s /q dist && mkdir dist && pnpm build:client && copy package.json dist && type nul > dist/build.flag"
+    "build": "mkdir dist 2>nul || rmdir /s /q dist && mkdir dist && pnpm build:client && copy package.json dist && type nul > dist/build.flag",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
+    "preview": "vite preview",
+    "build:analyze": "vite build --outDir dist/static --plugin rollup-plugin-visualizer"
   },
   "dependencies": {
     "clsx": "^2.1.1",
@@ -24,9 +28,15 @@
   "devDependencies": {
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",
+    "@typescript-eslint/eslint-plugin": "^8.48.1",
+    "@typescript-eslint/parser": "^8.48.1",
     "@vitejs/plugin-react": "^4.3.4",
     "autoprefixer": "^10.4.21",
+    "eslint": "^9.39.1",
+    "eslint-plugin-react-hooks": "^7.0.1",
+    "eslint-plugin-react-refresh": "^0.4.24",
     "postcss": "^8.5.3",
+    "rollup-plugin-visualizer": "^6.0.5",
     "tailwindcss": "^3.4.17",
     "typescript": "~5.7.2",
     "vite": "^6.2.0",

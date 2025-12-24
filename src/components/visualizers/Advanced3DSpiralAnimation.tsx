@@ -20,17 +20,6 @@ interface VisibilityControls {
   showEquations: boolean;
 }
 
-interface VisibilityControls {
-  showParticles: boolean;
-  showTrails: boolean;
-  showSpiralGrid: boolean;
-  showRadialGrid: boolean;
-  showCenterObject: boolean;
-  showEnvelope: boolean;
-  showBoundary: boolean;
-  showEquations: boolean;
-}
-
 interface Particle {
   x: number;
   y: number;
@@ -343,6 +332,7 @@ const Advanced3DSpiralAnimation: React.FC = () => {
           ctx.closePath();
           ctx.stroke();
         }
+      }
       }
       
       // 绘制螺旋连接包络线
@@ -678,7 +668,7 @@ const Advanced3DSpiralAnimation: React.FC = () => {
   };
 
   return (
-    <div className="relative w-full h-full overflow-hidden bg-gradient-to-b from-black via-purple-900/30 to-black">
+    <div className="overflow-hidden relative w-full h-full bg-gradient-to-b from-black to-black via-purple-900/30">
       <canvas
         ref={canvasRef}
         className="w-full h-full cursor-grab active:cursor-grabbing"
@@ -686,7 +676,7 @@ const Advanced3DSpiralAnimation: React.FC = () => {
       />
       
       {/* 高级控制面板 */}
-      <div className="absolute max-w-sm p-6 text-white border top-4 left-4 bg-black/90 rounded-xl backdrop-blur-md border-purple-500/30">
+      <div className="absolute top-4 left-4 p-6 max-w-sm text-white rounded-xl border backdrop-blur-md bg-black/90 border-purple-500/30">
         <h3 className="mb-4 text-xl font-bold text-purple-300">🌌 3D时空控制台</h3>
         
         <div className="space-y-4">
@@ -783,7 +773,7 @@ const Advanced3DSpiralAnimation: React.FC = () => {
       </div>
       
       {/* 操作指南 */}
-      <div className="absolute p-4 text-white border bottom-4 right-4 bg-black/90 rounded-xl backdrop-blur-md border-purple-500/30">
+      <div className="absolute right-4 bottom-4 p-4 text-white rounded-xl border backdrop-blur-md bg-black/90 border-purple-500/30">
         <h4 className="mb-2 text-lg font-bold text-purple-300">🎮 操作指南</h4>
         <div className="space-y-1 text-sm text-purple-200">
           <p>🖱️ 拖拽旋转视角</p>
@@ -794,7 +784,7 @@ const Advanced3DSpiralAnimation: React.FC = () => {
       </div>
       
       {/* 性能指示器 */}
-      <div className="absolute p-3 text-white border top-4 right-4 bg-black/90 rounded-xl backdrop-blur-md border-green-500/30">
+      <div className="absolute top-4 right-4 p-3 text-white rounded-xl border backdrop-blur-md bg-black/90 border-green-500/30">
         <div className="text-sm text-green-300">
           <p>🚀 高性能3D渲染</p>
           <p>📊 实时物理模拟</p>

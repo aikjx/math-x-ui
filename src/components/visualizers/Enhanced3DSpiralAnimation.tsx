@@ -7,6 +7,9 @@ interface SpiralParams {
   particleCount: number;
   rotationSpeed: number;
   zoomLevel: number;
+  particleSize: number;
+  trailLength: number;
+  glowIntensity: number;
 }
 
 interface VisibilityControls {
@@ -30,6 +33,8 @@ interface Particle {
   maxAge: number;
   size: number;
   hue: number;
+  saturation: number;
+  lightness: number;
   trail: Array<{ x: number; y: number; z: number; alpha: number }>;
 }
 
@@ -40,20 +45,23 @@ const Enhanced3DSpiralAnimation: React.FC = () => {
   const cameraRef = useRef({ 
     x: 0, 
     y: 0, 
-    z: 500, 
-    rotX: 0, 
-    rotY: 0, 
-    targetRotX: 0, 
-    targetRotY: 0 
+    z: 600, 
+    rotX: 0.3, 
+    rotY: 0.3, 
+    targetRotX: 0.3, 
+    targetRotY: 0.3 
   });
   
   const [params, setParams] = useState<SpiralParams>({
-    timeScale: 2.0,
-    helixRadius: 120,
-    helixPitch: 4,
-    particleCount: 120,
-    rotationSpeed: 1.2,
-    zoomLevel: 1.0
+    timeScale: 1.8,
+    helixRadius: 180,
+    helixPitch: 5,
+    particleCount: 200,
+    rotationSpeed: 1.0,
+    zoomLevel: 1.3,
+    particleSize: 4,
+    trailLength: 30,
+    glowIntensity: 1.2
   });
 
   const [visibility, setVisibility] = useState<VisibilityControls>({
@@ -108,15 +116,22 @@ const Enhanced3DSpiralAnimation: React.FC = () => {
       
       const x = R * Math.cos(omega * t + phi);
       const z = R * Math.sin(omega * t + phi);
-      const y = h * t - 200; // 垂直分布
+      const y = h * t - 300; // 增加垂直分布范围
+      
+      // 生成更丰富的颜色变化
+      const baseHue = (i * 360 / params.particleCount) % 360;
+      const saturation = 70 + Math.random() * 30;
+      const lightness = 50 + Math.random() * 20;
       
       particles.push({
         x, y, z,
         vx: 0, vy: 0, vz: 0,
         age: 0,
-        maxAge: 1000 + Math.random() * 500,
-        size: 3 + Math.random() * 4,
-        hue: (i * 360 / params.particleCount) % 360,
+        maxAge: 1500 + Math.random() * 1000,
+        size: params.particleSize + Math.random() * 2,
+        hue: baseHue,
+        saturation: saturation,
+        lightness: lightness,
         trail: []
       });
     }
@@ -145,7 +160,7 @@ const Enhanced3DSpiralAnimation: React.FC = () => {
       particle.z = R * Math.sin(omega * t);
       particle.y = (h * t) % 400 - 200;
       
-      // 更新轨迹
+      // 更新轨迹 - 使用参数控制长度
       particle.trail.unshift({
         x: particle.x,
         y: particle.y,
@@ -153,7 +168,7 @@ const Enhanced3DSpiralAnimation: React.FC = () => {
         alpha: 1.0
       });
       
-      if (particle.trail.length > 20) {
+      if (particle.trail.length > params.trailLength) {
         particle.trail.pop();
       }
       
@@ -182,12 +197,28 @@ const Enhanced3DSpiralAnimation: React.FC = () => {
     ctx.fillStyle = 'rgba(5, 5, 15, 0.1)';
     ctx.fillRect(0, 0, width, height);
     
-    // 绘制背景渐变
+    // 绘制背景渐变 - 添加动态星空效果
     const gradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, Math.max(width, height));
-    gradient.addColorStop(0, 'rgba(10, 10, 30, 0.8)');
-    gradient.addColorStop(1, 'rgba(0, 0, 0, 1)');
+    gradient.addColorStop(0, 'rgba(15, 10, 40, 0.9)');
+    gradient.addColorStop(0.5, 'rgba(5, 5, 20, 0.8)');
+    gradient.addColorStop(1, 'rgba(0, 0, 10, 1)');
     ctx.fillStyle = gradient;
     ctx.fillRect(0, 0, width, height);
+    
+    // 绘制星空背景
+    if (Math.random() < 0.1) { // 减少绘制频率以提高性能
+      for (let i = 0; i < 10; i++) {
+        const starX = Math.random() * width;
+        const starY = Math.random() * height;
+        const starSize = Math.random() * 2;
+        const starAlpha = Math.random() * 0.8 + 0.2;
+        
+        ctx.fillStyle = `rgba(255, 255, 255, ${starAlpha})`;
+        ctx.beginPath();
+        ctx.arc(starX, starY, starSize, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
 
     // 绘制螺旋包络线
     if (visibility.showEnvelope) {
@@ -372,40 +403,59 @@ const Enhanced3DSpiralAnimation: React.FC = () => {
         const screenY = centerY + projected.y * params.zoomLevel;
         const size = Math.max(1, particle.size * projected.scale * params.zoomLevel);
         
-        // 粒子光晕
+        // 粒子光晕 - 增强发光效果
+        const glowFactor = params.glowIntensity;
         const particleGradient = ctx.createRadialGradient(
           screenX, screenY, 0,
-          screenX, screenY, size * 2
+          screenX, screenY, size * 3 * glowFactor
         );
-        particleGradient.addColorStop(0, `hsla(${particle.hue}, 100%, 80%, 0.8)`);
-        particleGradient.addColorStop(0.5, `hsla(${particle.hue}, 90%, 60%, 0.4)`);
-        particleGradient.addColorStop(1, `hsla(${particle.hue}, 70%, 40%, 0)`);
+        particleGradient.addColorStop(0, `hsla(${particle.hue}, ${particle.saturation}%, ${particle.lightness + 30}%, 0.9)`);
+        particleGradient.addColorStop(0.3, `hsla(${particle.hue}, ${particle.saturation}%, ${particle.lightness}%, 0.5)`);
+        particleGradient.addColorStop(1, `hsla(${particle.hue}, ${particle.saturation}%, ${particle.lightness - 20}%, 0)`);
         
         ctx.fillStyle = particleGradient;
         ctx.beginPath();
         ctx.arc(screenX, screenY, size * 2, 0, Math.PI * 2);
         ctx.fill();
         
-        // 粒子核心
-        ctx.fillStyle = `hsla(${particle.hue}, 100%, 90%, 1)`;
+        // 粒子核心 - 添加高光效果
+        ctx.fillStyle = `hsla(${particle.hue}, ${particle.saturation}%, ${particle.lightness + 40}%, 1)`;
         ctx.beginPath();
         ctx.arc(screenX, screenY, size, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // 添加粒子高光
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+        ctx.beginPath();
+        ctx.arc(screenX - size * 0.3, screenY - size * 0.3, size * 0.3, 0, Math.PI * 2);
         ctx.fill();
       });
     }
 
-    // 绘制方程式
+    // 绘制方程式 - 增强视觉效果
     if (visibility.showEquations) {
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
-      ctx.font = 'bold 16px "Courier New", monospace';
+      // 方程背景板
+      const bgGradient = ctx.createLinearGradient(0, 20, 0, 80);
+      bgGradient.addColorStop(0, 'rgba(138, 43, 226, 0.2)');
+      bgGradient.addColorStop(1, 'rgba(138, 43, 226, 0)');
+      ctx.fillStyle = bgGradient;
+      ctx.fillRect(centerX - 400, 10, 800, 80);
+      
+      // 方程文字
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
+      ctx.font = 'bold 28px "Courier New", monospace';
       ctx.textAlign = 'center';
       ctx.shadowColor = '#8a2be2';
-      ctx.shadowBlur = 8;
+      ctx.shadowBlur = 12;
+      ctx.shadowOffsetX = 0;
+      ctx.shadowOffsetY = 0;
       
       ctx.fillText('时空同一化方程: ds² = c²dt² - dx² - dy² - dz²', centerX, 40);
-      ctx.fillText('三维螺旋时空方程: r⃗(t) = R·cos(ωt + φ)î + R·sin(ωt + φ)ĵ + h·t·k̂', centerX, 65);
+      ctx.fillText('三维螺旋时空方程: r⃗(t) = R·cos(ωt + φ)î + R·sin(ωt + φ)ĵ + h·t·k̂', centerX, 80);
       
       ctx.shadowBlur = 0;
+      ctx.shadowOffsetX = 0;
+      ctx.shadowOffsetY = 0;
     }
   }, [params, visibility]);
 
@@ -458,8 +508,9 @@ const Enhanced3DSpiralAnimation: React.FC = () => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     
-    canvas.width = 800;
-    canvas.height = 600;
+    // 增大canvas尺寸以提高可视化效果
+    canvas.width = 1600;
+    canvas.height = 1200;
     
     // 相机平滑移动
     const updateCamera = () => {
@@ -488,71 +539,114 @@ const Enhanced3DSpiralAnimation: React.FC = () => {
           
           {/* 物理参数 */}
           <div className="mb-6">
-            <h4 className="mb-2 font-semibold text-blue-300">📐 物理参数</h4>
-            
-            <div className="mb-3">
-              <label className="block mb-1 text-sm text-white">时间流速: {params.timeScale.toFixed(1)}x</label>
-              <input
-                type="range"
-                min="0.5"
-                max="5"
-                step="0.1"
-                value={params.timeScale}
-                onChange={(e) => setParams(prev => ({ ...prev, timeScale: parseFloat(e.target.value) }))}
-                className="w-full"
-              />
+              <h4 className="mb-2 font-semibold text-blue-300">📐 物理参数</h4>
+              
+              <div className="mb-3">
+                <label className="block mb-1 text-sm text-white">时间流速: {params.timeScale.toFixed(1)}x</label>
+                <input
+                  type="range"
+                  min="0.5"
+                  max="5"
+                  step="0.1"
+                  value={params.timeScale}
+                  onChange={(e) => setParams(prev => ({ ...prev, timeScale: parseFloat(e.target.value) }))}
+                  className="w-full"
+                />
+              </div>
+              
+              <div className="mb-3">
+                <label className="block mb-1 text-sm text-white">螺旋半径: {params.helixRadius}</label>
+                <input
+                  type="range"
+                  min="100"
+                  max="300"
+                  value={params.helixRadius}
+                  onChange={(e) => setParams(prev => ({ ...prev, helixRadius: parseInt(e.target.value) }))}
+                  className="w-full"
+                />
+              </div>
+              
+              <div className="mb-3">
+                <label className="block mb-1 text-sm text-white">螺旋间距: {params.helixPitch.toFixed(1)}</label>
+                <input
+                  type="range"
+                  min="2"
+                  max="10"
+                  step="0.5"
+                  value={params.helixPitch}
+                  onChange={(e) => setParams(prev => ({ ...prev, helixPitch: parseFloat(e.target.value) }))}
+                  className="w-full"
+                />
+              </div>
+              
+              <div className="mb-3">
+                <label className="block mb-1 text-sm text-white">粒子数量: {params.particleCount}</label>
+                <input
+                  type="range"
+                  min="100"
+                  max="300"
+                  value={params.particleCount}
+                  onChange={(e) => setParams(prev => ({ ...prev, particleCount: parseInt(e.target.value) }))}
+                  className="w-full"
+                />
+              </div>
+              
+              <div className="mb-3">
+                <label className="block mb-1 text-sm text-white">旋转速度: {params.rotationSpeed.toFixed(1)}</label>
+                <input
+                  type="range"
+                  min="0.1"
+                  max="3"
+                  step="0.1"
+                  value={params.rotationSpeed}
+                  onChange={(e) => setParams(prev => ({ ...prev, rotationSpeed: parseFloat(e.target.value) }))}
+                  className="w-full"
+                />
+              </div>
             </div>
             
-            <div className="mb-3">
-              <label className="block mb-1 text-sm text-white">螺旋半径: {params.helixRadius}</label>
-              <input
-                type="range"
-                min="60"
-                max="200"
-                value={params.helixRadius}
-                onChange={(e) => setParams(prev => ({ ...prev, helixRadius: parseInt(e.target.value) }))}
-                className="w-full"
-              />
+            {/* 视觉效果参数 */}
+            <div className="mb-6">
+              <h4 className="mb-2 font-semibold text-purple-300">✨ 视觉效果</h4>
+              
+              <div className="mb-3">
+                <label className="block mb-1 text-sm text-white">粒子大小: {params.particleSize.toFixed(1)}</label>
+                <input
+                  type="range"
+                  min="2"
+                  max="8"
+                  step="0.5"
+                  value={params.particleSize}
+                  onChange={(e) => setParams(prev => ({ ...prev, particleSize: parseFloat(e.target.value) }))}
+                  className="w-full"
+                />
+              </div>
+              
+              <div className="mb-3">
+                <label className="block mb-1 text-sm text-white">轨迹长度: {params.trailLength}</label>
+                <input
+                  type="range"
+                  min="10"
+                  max="50"
+                  value={params.trailLength}
+                  onChange={(e) => setParams(prev => ({ ...prev, trailLength: parseInt(e.target.value) }))}
+                  className="w-full"
+                />
+              </div>
+              
+              <div className="mb-3">
+                <label className="block mb-1 text-sm text-white">光晕强度: {params.glowIntensity.toFixed(1)}</label>
+                <input
+                  type="range"
+                  min="0.5"
+                  max="2"
+                  step="0.1"
+                  value={params.glowIntensity}
+                  onChange={(e) => setParams(prev => ({ ...prev, glowIntensity: parseFloat(e.target.value) }))}
+                  className="w-full"
+                />
+              </div>
             </div>
-            
-            <div className="mb-3">
-              <label className="block mb-1 text-sm text-white">螺旋间距: {params.helixPitch.toFixed(1)}</label>
-              <input
-                type="range"
-                min="1"
-                max="8"
-                step="0.5"
-                value={params.helixPitch}
-                onChange={(e) => setParams(prev => ({ ...prev, helixPitch: parseFloat(e.target.value) }))}
-                className="w-full"
-              />
-            </div>
-            
-            <div className="mb-3">
-              <label className="block mb-1 text-sm text-white">粒子数量: {params.particleCount}</label>
-              <input
-                type="range"
-                min="50"
-                max="200"
-                value={params.particleCount}
-                onChange={(e) => setParams(prev => ({ ...prev, particleCount: parseInt(e.target.value) }))}
-                className="w-full"
-              />
-            </div>
-            
-            <div className="mb-3">
-              <label className="block mb-1 text-sm text-white">旋转速度: {params.rotationSpeed.toFixed(1)}</label>
-              <input
-                type="range"
-                min="0.1"
-                max="3"
-                step="0.1"
-                value={params.rotationSpeed}
-                onChange={(e) => setParams(prev => ({ ...prev, rotationSpeed: parseFloat(e.target.value) }))}
-                className="w-full"
-              />
-            </div>
-          </div>
 
           {/* 可见性控制 */}
           <div className="mb-6">
@@ -588,7 +682,7 @@ const Enhanced3DSpiralAnimation: React.FC = () => {
         </div>
 
         {/* 动画画布 */}
-        <div className="flex items-center justify-center flex-1 bg-black">
+        <div className="flex items-center justify-center flex-1 bg-black overflow-hidden">
           <canvas
             ref={canvasRef}
             onMouseDown={handleMouseDown}
@@ -596,8 +690,8 @@ const Enhanced3DSpiralAnimation: React.FC = () => {
             onMouseUp={handleMouseUp}
             onMouseLeave={handleMouseUp}
             onWheel={handleWheel}
-            className="border border-gray-700 cursor-grab active:cursor-grabbing"
-            style={{ maxWidth: '100%', maxHeight: '100%' }}
+            className="border border-gray-700 cursor-grab active:cursor-grabbing transition-transform duration-300 ease-out"
+            style={{ width: '100%', height: '100%', objectFit: 'contain' }}
           />
         </div>
       </div>
